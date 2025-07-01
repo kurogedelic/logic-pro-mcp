@@ -11,13 +11,9 @@ Logic ProをMCP (Model Context Protocol)経由で制御するサーバー
 
 ## インストール
 
-```bash
-cd /Users/kurogedelic/logic-pro-mcp
-npm install
-chmod +x index.js
-```
+### npmパッケージから（推奨）
 
-## Claude Desktop設定
+Claude Desktop設定のみで使用可能:
 
 `~/Library/Application Support/Claude/claude_desktop_config.json` に以下を追加:
 
@@ -25,8 +21,29 @@ chmod +x index.js
 {
   "mcpServers": {
     "logic-pro": {
+      "command": "npx",
+      "args": ["logic-pro-mcp"]
+    }
+  }
+}
+```
+
+### ローカル開発の場合
+
+```bash
+git clone https://github.com/kurogedelic/logic-pro-mcp.git
+cd logic-pro-mcp
+npm install
+chmod +x index.js
+```
+
+Claude Desktop設定:
+```json
+{
+  "mcpServers": {
+    "logic-pro": {
       "command": "node",
-      "args": ["/Users/kurogedelic/logic-pro-mcp/index.js"]
+      "args": ["path/to/logic-pro-mcp/index.js"]
     }
   }
 }
