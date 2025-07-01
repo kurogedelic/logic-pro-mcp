@@ -1,10 +1,18 @@
 {
-  "name": "logic-pro-mcp",
-  "version": "2.0.0",
-  "description": "MCP server for Logic Pro control via OSC",
+  "name": "logic-pro-mcp-experimental",
+  "version": "1.0.0",
+  "description": "Experimental MCP server for Logic Pro research - MMC transport control only",
   "main": "index.js",
   "type": "module",
-  "keywords": ["mcp", "logic-pro", "osc", "music", "daw"],
+  "keywords": [
+    "mcp",
+    "logic-pro",
+    "midi",
+    "mmc",
+    "experimental",
+    "research"
+  ],
+  "private": true,
   "author": "kurogedelic",
   "license": "MIT",
   "repository": {
@@ -12,15 +20,12 @@
     "url": "https://github.com/kurogedelic/logic-pro-mcp.git"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "echo 'This is an experimental server - no automated tests'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
-    "node-osc": "^9.1.0",
-    "bonjour": "^3.5.0"
-  },
-  "bin": {
-    "logic-pro-mcp": "./index.js"
+    "midi": "^2.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

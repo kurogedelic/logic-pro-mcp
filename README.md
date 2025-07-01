@@ -1,119 +1,114 @@
-# Logic Pro MCP
+# Logic Pro MCP - Experimental Research Server
 
-MCP (Model Context Protocol) server for controlling Logic Pro via OSC
+⚠️ **IMPORTANT DISCLAIMER** ⚠️
 
-## Features
+This is an **experimental MCP server for research purposes only**. It provides very limited functionality and is **not intended for production use**. This server demonstrates the challenges of integrating with Logic Pro and serves as a learning example for MCP development.
 
-- 🎵 Transport control (play/stop/record/rewind/fast-forward)
-- 🎚️ Mixer operations (volume/pan/mute/solo/send)
-- 🎯 Track selection
-- 📡 OSC communication with Bonjour autodiscovery
+**What this server CAN do:**
+- Basic MIDI Machine Control (MMC) transport commands only
+- Connect/disconnect via IAC Driver
+
+**What this server CANNOT do:**
+- Mixer control (faders, knobs, mute, solo) - requires complex Logic Pro setup
+- Track selection - no reliable MIDI implementation  
+- Plugin control - not supported by Logic Pro MIDI
+- Project management - limited AppleScript access
+
+**Reality Check:** Logic Pro's MIDI integration is limited to basic transport control. Advanced features require dedicated hardware controllers or complex Control Surface configurations that are not practical for MCP implementation.
+
+**This server exists to:**
+- Show researchers what's actually possible with Logic Pro MCP integration
+- Demonstrate MCP server development patterns
+- Save others time by documenting the limitations
+
+If you're looking for serious Logic Pro automation, consider AppleScript, dedicated hardware controllers, or Logic Pro's built-in automation features instead.
 
 ## Installation
 
-### From npm package (Recommended)
-
-Simply add to your Claude Desktop configuration:
-
-`~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "logic-pro": {
-      "command": "npx",
-      "args": ["logic-pro-mcp"]
-    }
-  }
-}
-```
-
-### Local development
+### Local Installation (Recommended)
 
 ```bash
 git clone https://github.com/kurogedelic/logic-pro-mcp.git
 cd logic-pro-mcp
 npm install
-chmod +x index.js
 ```
 
-Claude Desktop configuration:
+### Claude Desktop Configuration
+
+Add this to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
 ```json
 {
   "mcpServers": {
     "logic-pro": {
       "command": "node",
-      "args": ["path/to/logic-pro-mcp/index.js"]
+      "args": ["/absolute/path/to/logic-pro-mcp/index.js"]
     }
   }
 }
 ```
 
-## Logic Pro Setup
+**Important:** Replace `/absolute/path/to/logic-pro-mcp/` with the actual full path to where you cloned this repository.
 
-1. Launch Logic Pro
-2. Go to `Logic Pro` > `Control Surfaces` > `Setup...`
-3. Enable `New` > `Automatic Installation`
-4. The MCP server will be automatically recognized when connected
+## Setup Requirements
 
-## Usage
+### 1. Enable IAC Driver
+1. Open **Audio MIDI Setup.app** (Applications > Utilities)
+2. Window > Show MIDI Studio
+3. Double-click **IAC Driver**
+4. Check "Device is online"
+5. Ensure at least "Bus 1" exists
 
-### Connection
-```
-Connect to Logic Pro
-```
+### 2. Configure Logic Pro MIDI
+1. Logic Pro > Preferences > MIDI > Input
+2. Enable **IAC Driver Bus 1**
+3. Logic Pro > Project Settings > Synchronization > MIDI
+4. Check **"Transmit MMC"** (MIDI Machine Control)
 
-### Transport
-```
-Play the song
-Stop playback
-Start recording
-Rewind
-Fast forward
-```
+## Available Functions
 
-### Mixer
+### Basic Transport Control (MMC)
 ```
-Set track 1 volume to 0.7
-Mute track 3
-Set track 2 pan to 0.8 (right)
-Solo track 4
-```
-
-### Track Selection
-```
-Select track 5
+Connect to Logic Pro       # Establish MIDI connection
+Play                      # Start playback  
+Stop                      # Stop playback
+Record                    # Start recording
+Pause                     # Pause playback
+Rewind                    # Rewind transport
+Fast Forward              # Fast forward transport
 ```
 
-## Limitations
-
-- Requires Logic Pro 9.1.2 or later
-- macOS only
-- UDP/IPv4 only
-- Custom OSC paths not supported
-- Limited plugin control
-
-## Troubleshooting
-
-1. **Logic Pro not recognizing the connection**
-   - Check firewall settings
-   - Ensure ports 7000 and 8000 are available
-   - Verify `Automatic Installation` is enabled in Logic Pro
-
-2. **Connection drops**
-   - Check Wi-Fi/network stability
-   - Restart Logic Pro
-
-## Development
-
-### Debug mode
-```bash
-DEBUG=* node index.js
+### Connection Management
+```
+Check connection status   # View MIDI connection state
+Disconnect               # Close MIDI connection
 ```
 
-### OSC message monitoring
-Use Console.app to monitor OSC messages
+## Limitations & Known Issues
+
+- **Mixer Control**: Requires complex Control Surface setup in Logic Pro
+- **Track Selection**: No standardized MIDI implementation
+- **Plugin Control**: Not supported by Logic Pro's MIDI interface
+- **Fader Control**: Requires hardware controller emulation
+- **Project Info**: AppleScript access is restricted in modern Logic Pro versions
+
+## Alternative Solutions
+
+For serious Logic Pro automation, consider:
+
+1. **AppleScript**: Direct Logic Pro scripting (limited but more reliable)
+2. **Hardware Controllers**: Dedicated MIDI control surfaces
+3. **Logic Pro Remote**: Official iPad app for wireless control
+4. **Third-party Tools**: MainStage, TouchOSC with proper templates
+
+## Development Notes
+
+This server demonstrates:
+- MIDI Machine Control (MMC) implementation
+- IAC Driver integration patterns
+- MCP server development with Node.js
+- The practical limitations of DAW integration
 
 ## License
 
-MIT
+MIT - Use at your own risk for research/educational purposes only.
