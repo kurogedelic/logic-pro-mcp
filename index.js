@@ -48,6 +48,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return handleDisconnect();
       case 'status':
         return handleStatus();
+      case 'setup_guide':
+        return generateControlSurfaceGuide();
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -322,6 +324,51 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: tools
   };
+});
+
+// Control Surface設定生成ツール
+function generateControlSurfaceGuide() {
+  return {
+    content: [{
+      type: 'text',
+      text: `
+Logic Pro Control Surface Setup Guide:
+
+1. Logic Pro > Control Surfaces > Setup...
+2. New > Install > Other > Manual Setup
+3. Configure as follows:
+
+Device: Generic OSC Device
+Port In: 8000 (this MCP server)
+Port Out: 7000 (Logic Pro)
+IP: 127.0.0.1
+
+OSC Address Mappings:
+- Transport Play: /play
+- Transport Stop: /stop  
+- Transport Record: /record
+- Transport Rewind: /rewind
+- Transport Fast Forward: /ffwd
+- Track Volume: /track/[N]/volume (where N = track number)
+- Track Pan: /track/[N]/pan
+- Track Mute: /track/[N]/mute
+- Track Solo: /track/[N]/solo
+- Track Select: /track/select
+
+After setup, click "Apply" and the MCP server should be able to control Logic Pro.
+`
+    }]
+  };
+}
+
+// 設定ガイドツールを追加
+tools.push({
+  name: 'setup_guide',
+  description: 'Show Logic Pro Control Surface setup guide',
+  inputSchema: {
+    type: 'object',
+    properties: {}
+  }
 });
 
 // サーバー起動
