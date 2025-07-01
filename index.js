@@ -88,12 +88,12 @@ function handleConnect() {
     // Bonjour公開
     bonjourInstance = Bonjour();
     bonjourInstance.publish({
-      name: 'MCP-Logic[iPad](TouchOSC)',
+      name: 'Logic MCP Server',
       type: '_osc._udp',
       port: LOCAL_PORT,
       txt: { version: '1.0' }
     });
-    console.error(`Bonjour service published: MCP-Logic[iPad](TouchOSC) on port ${LOCAL_PORT}`);
+    console.error(`Bonjour service published: Logic MCP Server on port ${LOCAL_PORT}`);
 
     connected = true;
     
@@ -156,11 +156,11 @@ function handleTransport({ action }) {
   }
 
   const commands = {
-    play: '/transport/play',
-    stop: '/transport/stop',
-    record: '/transport/record',
-    rewind: '/transport/rewind',
-    forward: '/transport/forward'
+    play: '/play',
+    stop: '/stop',
+    record: '/record',
+    rewind: '/rewind',
+    forward: '/ffwd'
   };
 
   const command = commands[action];
@@ -186,12 +186,12 @@ function handleMixer({ track, parameter, value }) {
   }
 
   const paths = {
-    volume: `/mixer/volume/volume${track}`,
-    pan: `/mixer/pan/pan${track}`,
-    mute: `/mixer/mute/mute${track}`,
-    solo: `/mixer/solo/solo${track}`,
-    send1: `/mixer/send/1/level${track}`,
-    send2: `/mixer/send/2/level${track}`
+    volume: `/track/${track}/volume`,
+    pan: `/track/${track}/pan`,
+    mute: `/track/${track}/mute`,
+    solo: `/track/${track}/solo`,
+    send1: `/track/${track}/send/1`,
+    send2: `/track/${track}/send/2`
   };
 
   const path = paths[parameter];
@@ -223,8 +223,8 @@ function handleTrack({ number }) {
     throw new Error('Not connected to Logic Pro');
   }
 
-  console.error(`Sending OSC: /logic/track/select ${number} to 127.0.0.1:${LOGIC_PORT}`);
-  oscClient.send('/logic/track/select', number);
+  console.error(`Sending OSC: /track/select ${number} to 127.0.0.1:${LOGIC_PORT}`);
+  oscClient.send('/track/select', number);
   
   return {
     content: [{

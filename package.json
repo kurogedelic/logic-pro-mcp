@@ -1,6 +1,6 @@
 {
   "name": "logic-pro-mcp",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "MCP server for Logic Pro control via OSC",
   "main": "index.js",
   "type": "module",
