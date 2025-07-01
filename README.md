@@ -1,21 +1,21 @@
 # Logic Pro MCP
 
-Logic ProをMCP (Model Context Protocol)経由で制御するサーバー
+MCP (Model Context Protocol) server for controlling Logic Pro via OSC
 
-## 機能
+## Features
 
-- 🎵 トランスポート制御（再生/停止/録音/早送り/巻き戻し）
-- 🎚️ ミキサー操作（音量/パン/ミュート/ソロ/センド）
-- 🎯 トラック選択
-- 📡 OSC通信（Bonjour自動検出）
+- 🎵 Transport control (play/stop/record/rewind/fast-forward)
+- 🎚️ Mixer operations (volume/pan/mute/solo/send)
+- 🎯 Track selection
+- 📡 OSC communication with Bonjour autodiscovery
 
-## インストール
+## Installation
 
-### npmパッケージから（推奨）
+### From npm package (Recommended)
 
-Claude Desktop設定のみで使用可能:
+Simply add to your Claude Desktop configuration:
 
-`~/Library/Application Support/Claude/claude_desktop_config.json` に以下を追加:
+`~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -28,7 +28,7 @@ Claude Desktop設定のみで使用可能:
 }
 ```
 
-### ローカル開発の場合
+### Local development
 
 ```bash
 git clone https://github.com/kurogedelic/logic-pro-mcp.git
@@ -37,7 +37,7 @@ npm install
 chmod +x index.js
 ```
 
-Claude Desktop設定:
+Claude Desktop configuration:
 ```json
 {
   "mcpServers": {
@@ -49,71 +49,71 @@ Claude Desktop設定:
 }
 ```
 
-## Logic Pro設定
+## Logic Pro Setup
 
-1. Logic Proを起動
-2. `Logic Pro` > `Control Surfaces` > `Setup...`
-3. `New` > `Automatic Installation` を有効化
-4. MCPサーバーから接続すると、自動的に認識されます
+1. Launch Logic Pro
+2. Go to `Logic Pro` > `Control Surfaces` > `Setup...`
+3. Enable `New` > `Automatic Installation`
+4. The MCP server will be automatically recognized when connected
 
-## 使用方法
+## Usage
 
-### 接続
+### Connection
 ```
-Logic Proに接続して
-```
-
-### トランスポート
-```
-再生して
-停止して
-録音開始
-巻き戻して
-早送りして
+Connect to Logic Pro
 ```
 
-### ミキサー
+### Transport
 ```
-トラック1の音量を0.7にして
-トラック3をミュート
-トラック2のパンを0.8に（右寄り）
-トラック4をソロにして
-```
-
-### トラック選択
-```
-トラック5を選択
+Play the song
+Stop playback
+Start recording
+Rewind
+Fast forward
 ```
 
-## 制限事項
+### Mixer
+```
+Set track 1 volume to 0.7
+Mute track 3
+Set track 2 pan to 0.8 (right)
+Solo track 4
+```
 
-- Logic Pro 9.1.2以降が必要
-- macOS専用
-- UDP/IPv4のみサポート
-- カスタムOSCパスは使用不可
-- プラグインの詳細制御は制限あり
+### Track Selection
+```
+Select track 5
+```
 
-## トラブルシューティング
+## Limitations
 
-1. **Logic Proが認識しない場合**
-   - ファイアウォール設定を確認
-   - ポート7000, 8000が使用されていないか確認
-   - Logic Proの`Automatic Installation`が有効か確認
+- Requires Logic Pro 9.1.2 or later
+- macOS only
+- UDP/IPv4 only
+- Custom OSC paths not supported
+- Limited plugin control
 
-2. **接続が切れる場合**
-   - Wi-Fi/ネットワークの安定性を確認
-   - Logic Proを再起動
+## Troubleshooting
 
-## 開発
+1. **Logic Pro not recognizing the connection**
+   - Check firewall settings
+   - Ensure ports 7000 and 8000 are available
+   - Verify `Automatic Installation` is enabled in Logic Pro
 
-### デバッグモード
+2. **Connection drops**
+   - Check Wi-Fi/network stability
+   - Restart Logic Pro
+
+## Development
+
+### Debug mode
 ```bash
 DEBUG=* node index.js
 ```
 
-### OSCメッセージ監視
-Console.appでOSCメッセージを確認できます
+### OSC message monitoring
+Use Console.app to monitor OSC messages
 
-## ライセンス
+## License
 
 MIT
