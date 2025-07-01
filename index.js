@@ -36,24 +36,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case 'transport':
         return handleTransport(args);
-      case 'mixer':
-        return handleMixer(args);
-      case 'track':
-        return handleTrack(args);
       case 'connect':
         return handleConnect();
       case 'disconnect':
         return handleDisconnect();
       case 'status':
         return handleStatus();
-      case 'setup_guide':
-        return generateControlSurfaceGuide();
-      case 'get_project_info':
-        return getProjectInfo();
-      case 'setup_midi_learn':
-        return setupMidiLearn();
-      case 'feedback_status':
-        return getFeedbackStatus();
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -320,116 +308,13 @@ function handleTransport({ action, position }) {
   }
 }
 
-// ミキサー制御（Learn Mode対応版）
-function handleMixer({ track, parameter, value }) {
-  if (!connected || !midiOutput) {
-    throw new Error('Not connected to MIDI');
-  }
 
-  // Logic ProのControl Surfaceで学習可能なCC範囲を使用
-  const ccMappings = {
-    volume: 7,    // CC#7 = Standard Volume
-    pan: 10,      // CC#10 = Standard Pan
-    mute: 16 + track - 1,   // CC#16-31 = User defined (mute)
-    solo: 32 + track - 1,   // CC#32-47 = User defined (solo)
-    send1: 48 + track - 1,  // CC#48-63 = User defined (send1)
-    send2: 64 + track - 1   // CC#64-79 = User defined (send2)
-  };
-
-  const ccNumber = ccMappings[parameter];
-  if (ccNumber === undefined) {
-    throw new Error(`Parameter '${parameter}' not supported. Available: ${Object.keys(ccMappings).join(', ')}`);
-  }
-
-  try {
-    // volumeとpanは各チャンネル、他はグローバルチャンネル1
-    const channel = (parameter === 'volume' || parameter === 'pan') 
-      ? Math.min(Math.max(track - 1, 0), 15) 
-      : 0;
-    
-    let ccValue;
-    
-    if (parameter === 'mute' || parameter === 'solo') {
-      ccValue = value ? 127 : 0;
-    } else {
-      ccValue = Math.round(Math.max(0, Math.min(1, value)) * 127);
-    }
-    
-    // MIDI CC メッセージ: [0xB0 + channel, CC number, value]
-    const midiMessage = [0xB0 + channel, ccNumber, ccValue];
-    
-    console.error(`Sending MIDI CC: Ch${channel + 1} CC${ccNumber} = ${ccValue} for track ${track} ${parameter}`);
-    
-    // 操作の追跡を開始（CC用）
-    const operationKey = `cc_${channel}_${ccNumber}`;
-    const timeoutId = setTimeout(() => {
-      if (pendingOperations.has(operationKey)) {
-        pendingOperations.delete(operationKey);
-        console.error(`Warning: No feedback received for CC${ccNumber} command`);
-      }
-    }, feedbackTimeout);
-    
-    pendingOperations.set(operationKey, {
-      track,
-      parameter,
-      value,
-      timeout: timeoutId,
-      timestamp: Date.now()
-    });
-    
-    midiOutput.sendMessage(midiMessage);
-    
-    // 少し待ってフィードバックをチェック
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const stillPending = pendingOperations.has(operationKey);
-        const status = stillPending ? ' - No feedback (may need Learn Mode setup)' : ' - Confirmed';
-        resolve({
-          content: [{
-            type: 'text',
-            text: `Set track ${track} ${parameter} to ${value} (CC${ccNumber} Ch${channel + 1})${status}`
-          }]
-        });
-      }, 1000); // CCの場合は少し長めに待つ
-    });
-  } catch (error) {
-    throw new Error(`MIDI CC failed: ${error.message}`);
-  }
-}
-
-// トラック選択（MIDI CC版）
-function handleTrack({ number }) {
-  if (!connected || !midiOutput) {
-    throw new Error('Not connected to MIDI');
-  }
-
-  try {
-    // Logic Pro Track Select via MIDI CC (CC#32 Bank Select)
-    const channel = 0; // Global channel
-    const trackValue = Math.min(Math.max(number - 1, 0), 127);
-    
-    // MIDI CC メッセージ: Bank Select MSB (CC#0) + Bank Select LSB (CC#32)
-    const selectMessage = [0xB0 + channel, 32, trackValue];
-    
-    console.error(`Sending MIDI Track Select: Ch${channel + 1} CC32 = ${trackValue}`);
-    midiOutput.sendMessage(selectMessage);
-    
-    return {
-      content: [{
-        type: 'text',
-        text: `Selected track ${number} (via MIDI CC32)`
-      }]
-    };
-  } catch (error) {
-    throw new Error(`MIDI track select failed: ${error.message}`);
-  }
-}
 
 // ツール登録
 const tools = [
   {
     name: 'connect',
-    description: 'Connect to Logic Pro via OSC',
+    description: 'Connect to Logic Pro via MIDI',
     inputSchema: {
       type: 'object',
       properties: {}
@@ -470,46 +355,6 @@ const tools = [
       required: ['action']
     }
   },
-  {
-    name: 'mixer',
-    description: 'Control mixer parameters',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        track: {
-          type: 'number',
-          minimum: 1,
-          maximum: 32,
-          description: 'Track number (1-32)'
-        },
-        parameter: {
-          type: 'string',
-          enum: ['volume', 'pan', 'mute', 'solo', 'send1', 'send2'],
-          description: 'Mixer parameter to control'
-        },
-        value: {
-          type: 'number',
-          description: 'Parameter value (0-1 for volume/pan/sends, boolean for mute/solo)'
-        }
-      },
-      required: ['track', 'parameter', 'value']
-    }
-  },
-  {
-    name: 'track',
-    description: 'Select track',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        number: {
-          type: 'number',
-          minimum: 1,
-          description: 'Track number to select'
-        }
-      },
-      required: ['number']
-    }
-  }
 ];
 
 // ツール登録
@@ -519,216 +364,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
-// Control Surface設定生成ツール
-function generateControlSurfaceGuide() {
-  return {
-    content: [{
-      type: 'text',
-      text: `
-Logic Pro MIDI Setup Guide:
 
-1. Audio MIDI Setup.app > MIDI Window
-2. Enable "IAC Driver" 
-3. Configure at least one Bus (Bus 1)
 
-4. Logic Pro > Preferences > MIDI > Input/Output
-5. Enable "IAC Driver Bus 1" in Input list
-
-6. Logic Pro > Settings > Synchronization > MIDI
-7. Check "Transmit MMC" checkbox
-
-Available MIDI Machine Control (MMC) Commands:
-- play, stop, record, pause
-- rewind, forward, shuttle
-- record_exit (punch out), record_pause
-- deferred_play, eject, chase, reset
-- write (record ready/arm), goto (locate)
-
-Available MIDI CC Controls:
-- Volume: CC#7 (per track channel)
-- Pan: CC#10 (per track channel)  
-- Mute: CC#16-31 (track 1-16, requires Learn Mode)
-- Solo: CC#32-47 (track 1-16, requires Learn Mode)
-- Send1: CC#48-63 (track 1-16, requires Learn Mode)
-- Send2: CC#64-79 (track 1-16, requires Learn Mode)
-
-Track channels: Track 1 = MIDI Ch 1, Track 2 = MIDI Ch 2, etc.
-
-IMPORTANT: Mixer controls (mute/solo/sends) require one-time setup:
-1. Use 'setup_midi_learn' tool to send learning signals
-2. In Logic Pro Mixer, Control-click each button > "Learn Assignment"
-3. Complete the learning process for each control
-
-Use 'get_project_info' to check track count before controlling tracks.
-`
-    }]
-  };
-}
-
-// Logic Pro プロジェクト情報取得
-function getProjectInfo() {
-  const { execSync } = require('child_process');
-  
-  try {
-    // AppleScriptでLogic Proの基本情報を取得
-    const script = `osascript -e '
-tell application "Logic Pro"
-  try
-    set trackCount to count of tracks of current project
-    set projectName to name of current project
-    return "Project: " & projectName & ", Tracks: " & trackCount
-  on error
-    return "No project open or Logic Pro not accessible"
-  end try
-end tell'`;
-    
-    const result = execSync(script, { encoding: 'utf8' }).trim();
-    
-    return {
-      content: [{
-        type: 'text',
-        text: `Logic Pro Info: ${result}`
-      }]
-    };
-  } catch (error) {
-    return {
-      content: [{
-        type: 'text',
-        text: `Failed to get project info: ${error.message}`
-      }]
-    };
-  }
-}
-
-// 設定ガイドツールを追加
-tools.push({
-  name: 'setup_guide',
-  description: 'Show Logic Pro Control Surface setup guide',
-  inputSchema: {
-    type: 'object',
-    properties: {}
-  }
-});
-
-// MIDI Learn セットアップツール
-function setupMidiLearn() {
-  if (!connected || !midiOutput) {
-    return {
-      content: [{
-        type: 'text',
-        text: 'Connect to MIDI first using the connect tool'
-      }]
-    };
-  }
-
-  try {
-    // Logic ProのMixerで学習用のCC信号を送信
-    const learnSequence = [
-      { track: 1, cc: 16, param: 'mute' },
-      { track: 1, cc: 32, param: 'solo' },
-      { track: 1, cc: 48, param: 'send1' },
-      { track: 1, cc: 64, param: 'send2' }
-    ];
-
-    setTimeout(() => {
-      learnSequence.forEach((item, index) => {
-        setTimeout(() => {
-          const midiMessage = [0xB0, item.cc, 64]; // Ch1, CC, mid value
-          console.error(`Sending learn signal: CC${item.cc} for ${item.param}`);
-          midiOutput.sendMessage(midiMessage);
-        }, index * 1000);
-      });
-    }, 2000);
-
-    return {
-      content: [{
-        type: 'text',
-        text: `MIDI Learn Setup Started!
-
-1. In Logic Pro, open Track 1 in Mixer
-2. Control-click the Mute button > "Learn Assignment"
-3. Wait 2 seconds - CC16 signal will be sent
-4. Click "Done" in Controller Assignment window
-5. Repeat for Solo (CC32), Send1 (CC48), Send2 (CC64)
-
-Learning signals will be sent in sequence:
-- CC16 (Mute) in 2 seconds
-- CC32 (Solo) in 3 seconds  
-- CC48 (Send1) in 4 seconds
-- CC64 (Send2) in 5 seconds
-
-After setup, mixer controls will work properly.`
-      }]
-    };
-  } catch (error) {
-    throw new Error(`MIDI Learn setup failed: ${error.message}`);
-  }
-}
-
-// プロジェクト情報ツールを追加
-tools.push({
-  name: 'get_project_info',
-  description: 'Get Logic Pro project information (track count, etc.)',
-  inputSchema: {
-    type: 'object',
-    properties: {}
-  }
-});
-
-// フィードバック状態確認
-function getFeedbackStatus() {
-  if (!connected) {
-    return {
-      content: [{
-        type: 'text',
-        text: 'Not connected to MIDI'
-      }]
-    };
-  }
-
-  const pendingCount = pendingOperations.size;
-  const pendingList = Array.from(pendingOperations.entries()).map(([key, operation]) => {
-    const elapsed = Date.now() - operation.timestamp;
-    return `- ${key}: ${elapsed}ms ago`;
-  });
-
-  return {
-    content: [{
-      type: 'text',
-      text: `MIDI Feedback Status:
-Connected: ${connected}
-Input monitoring: ${midiInput ? 'Active' : 'Inactive'}
-Pending operations: ${pendingCount}
-
-${pendingCount > 0 ? 'Waiting for feedback:\n' + pendingList.join('\n') : 'All operations completed or timed out'}
-
-Note: No feedback usually means:
-- Logic Pro MIDI input is disabled
-- IAC Driver not properly configured
-- Control Surface Learn Mode not set up`
-    }]
-  };
-}
-
-// MIDI Learn セットアップツールを追加
-tools.push({
-  name: 'setup_midi_learn',
-  description: 'Send MIDI Learn signals for Logic Pro Control Surface setup',
-  inputSchema: {
-    type: 'object',
-    properties: {}
-  }
-});
-
-// フィードバック状態ツールを追加
-tools.push({
-  name: 'feedback_status',
-  description: 'Check MIDI feedback status and pending operations',
-  inputSchema: {
-    type: 'object',
-    properties: {}
-  }
-});
 
 // サーバー起動
 async function main() {
