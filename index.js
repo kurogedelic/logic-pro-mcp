@@ -63,106 +63,67 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Logic Proへの接続
+// Logic Pro接続確認（AppleScript版）
 function handleConnect() {
-  if (connected) {
-    return {
-      content: [{
-        type: 'text',
-        text: 'Already connected to Logic Pro'
-      }]
-    };
-  }
-
+  const { execSync } = require('child_process');
+  
   try {
-    // OSCクライアント作成
-    oscClient = new osc.Client('127.0.0.1', LOGIC_PORT);
-    
-    // OSCサーバー作成（フィードバック受信用）
-    oscServer = new osc.Server(LOCAL_PORT, '0.0.0.0');
-    
-    // OSCメッセージ受信時の処理
-    oscServer.on('message', (msg, rinfo) => {
-      const [address, ...args] = msg;
-      console.error(`Received OSC: ${address}`, args);
-    });
-    
-    // Bonjour公開
-    bonjourInstance = Bonjour();
-    bonjourInstance.publish({
-      name: 'Logic MCP Server',
-      type: '_osc._udp',
-      port: LOCAL_PORT,
-      txt: { version: '1.0' }
-    });
-    console.error(`Bonjour service published: Logic MCP Server on port ${LOCAL_PORT}`);
-
-    connected = true;
+    // Logic Proが起動しているか確認
+    const script = `osascript -e 'tell application "Logic Pro" to get name'`;
+    execSync(script);
     
     return {
       content: [{
         type: 'text',
-        text: 'Connected to Logic Pro on port 7000. Make sure Logic Pro is running and OSC is enabled in Control Surfaces.'
+        text: 'Connected to Logic Pro via AppleScript'
       }]
     };
   } catch (error) {
-    connected = false;
-    throw error;
+    throw new Error('Logic Pro is not running or not accessible');
   }
 }
 
-// 切断処理
+// 切断処理（AppleScript版では不要）
 function handleDisconnect() {
-  if (!connected) {
-    return {
-      content: [{
-        type: 'text',
-        text: 'Not connected to Logic Pro'
-      }]
-    };
-  }
-
-  if (bonjourInstance) {
-    bonjourInstance.unpublishAll();
-    bonjourInstance = null;
-  }
-  if (oscServer) {
-    oscServer.close();
-    oscServer = null;
-  }
-  oscClient = null;
-  connected = false;
-  
   return {
     content: [{
       type: 'text', 
-      text: 'Disconnected from Logic Pro'
+      text: 'AppleScript connection is always available when Logic Pro is running'
     }]
   };
 }
 
-// 接続状態
+// 接続状態（AppleScript版）
 function handleStatus() {
-  return {
-    content: [{
-      type: 'text',
-      text: `Connection status: ${connected ? 'Connected' : 'Disconnected'}`
-    }]
-  };
+  const { execSync } = require('child_process');
+  
+  try {
+    const script = `osascript -e 'tell application "Logic Pro" to get name'`;
+    execSync(script);
+    return {
+      content: [{
+        type: 'text',
+        text: 'Logic Pro is running and accessible via AppleScript'
+      }]
+    };
+  } catch (error) {
+    return {
+      content: [{
+        type: 'text',
+        text: 'Logic Pro is not running or not accessible'
+      }]
+    };
+  }
 }
 
-// トランスポート制御
+// トランスポート制御（AppleScript版）
 function handleTransport({ action }) {
-  if (!connected) {
-    throw new Error('Not connected to Logic Pro');
-  }
-
   const commands = {
-    play: '/play',
-    stop: '/stop',
-    record: '/record',
-    rewind: '/rewind',
-    forward: '/ffwd'
+    play: 'play',
+    stop: 'stop', 
+    record: 'record',
+    rewind: 'rewind',
+    forward: 'fast forward'
   };
 
   const command = commands[action];
@@ -170,70 +131,75 @@ function handleTransport({ action }) {
     throw new Error(`Unknown transport action: ${action}`);
   }
 
-  console.error(`Sending OSC: ${command} 1.0 to 127.0.0.1:${LOGIC_PORT}`);
-  oscClient.send(command, 1.0);
-  
-  return {
-    content: [{
-      type: 'text',
-      text: `Transport: ${action} (sent OSC: ${command})`
-    }]
-  };
-}
-
-// ミキサー制御
-function handleMixer({ track, parameter, value }) {
-  if (!connected) {
-    throw new Error('Not connected to Logic Pro');
-  }
-
-  const paths = {
-    volume: `/track/${track}/volume`,
-    pan: `/track/${track}/pan`,
-    mute: `/track/${track}/mute`,
-    solo: `/track/${track}/solo`,
-    send1: `/track/${track}/send/1`,
-    send2: `/track/${track}/send/2`
-  };
-
-  const path = paths[parameter];
-  if (!path) {
-    throw new Error(`Unknown mixer parameter: ${parameter}`);
-  }
-
-  let normalizedValue;
-  if (parameter === 'mute' || parameter === 'solo') {
-    normalizedValue = value ? 1.0 : 0.0;
-  } else {
-    normalizedValue = Math.max(0, Math.min(1, value));
-  }
+  try {
+    const { execSync } = require('child_process');
+    const script = `osascript -e 'tell application "Logic Pro" to ${command}'`;
+    console.error(`Executing AppleScript: ${script}`);
+    execSync(script);
     
-  console.error(`Sending OSC: ${path} ${normalizedValue} to 127.0.0.1:${LOGIC_PORT}`);
-  oscClient.send(path, normalizedValue);
-  
-  return {
-    content: [{
-      type: 'text',
-      text: `Set track ${track} ${parameter} to ${normalizedValue} (sent OSC: ${path})`
-    }]
-  };
+    return {
+      content: [{
+        type: 'text',
+        text: `Transport: ${action} (via AppleScript)`
+      }]
+    };
+  } catch (error) {
+    throw new Error(`AppleScript failed: ${error.message}`);
+  }
 }
 
-// トラック選択
-function handleTrack({ number }) {
-  if (!connected) {
-    throw new Error('Not connected to Logic Pro');
-  }
-
-  console.error(`Sending OSC: /track/select ${number} to 127.0.0.1:${LOGIC_PORT}`);
-  oscClient.send('/track/select', number);
+// ミキサー制御（AppleScript版）
+function handleMixer({ track, parameter, value }) {
+  const { execSync } = require('child_process');
   
-  return {
-    content: [{
-      type: 'text',
-      text: `Selected track ${number} (sent OSC: /logic/track/select)`
-    }]
-  };
+  try {
+    let script;
+    
+    if (parameter === 'mute') {
+      const state = value ? 'true' : 'false';
+      script = `osascript -e 'tell application "Logic Pro" to set mute of track ${track} to ${state}'`;
+    } else if (parameter === 'solo') {
+      const state = value ? 'true' : 'false';
+      script = `osascript -e 'tell application "Logic Pro" to set solo of track ${track} to ${state}'`;
+    } else if (parameter === 'volume') {
+      // Logic ProのAppleScriptでは音量制御が限定的
+      script = `osascript -e 'tell application "Logic Pro" to set volume of track ${track} to ${Math.round(value * 127)}'`;
+    } else {
+      throw new Error(`Parameter '${parameter}' not supported via AppleScript`);
+    }
+    
+    console.error(`Executing AppleScript: ${script}`);
+    execSync(script);
+    
+    return {
+      content: [{
+        type: 'text',
+        text: `Set track ${track} ${parameter} to ${value} (via AppleScript)`
+      }]
+    };
+  } catch (error) {
+    throw new Error(`AppleScript failed: ${error.message}`);
+  }
+}
+
+// トラック選択（AppleScript版）
+function handleTrack({ number }) {
+  const { execSync } = require('child_process');
+  
+  try {
+    const script = `osascript -e 'tell application "Logic Pro" to set current track to track ${number}'`;
+    console.error(`Executing AppleScript: ${script}`);
+    execSync(script);
+    
+    return {
+      content: [{
+        type: 'text',
+        text: `Selected track ${number} (via AppleScript)`
+      }]
+    };
+  } catch (error) {
+    throw new Error(`AppleScript failed: ${error.message}`);
+  }
 }
 
 // ツール登録
