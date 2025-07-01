@@ -1,5 +1,23 @@
+# Dependencies
 node_modules/
+
+# Logs
 *.log
-.DS_Store
-.env
 npm-debug.log*
+
+# Development files
+CLAUDE.md
+QUICKSTART.md
+claude_config_example.json
+demo.sh
+error-fixed.txt
+fix-and-setup.sh
+make-executable.sh
+setup-claude.sh
+test-osc.js
+
+# OS
+.DS_Store
+
+# Environment
+.env

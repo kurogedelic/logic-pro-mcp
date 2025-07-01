@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "logic-pro": {
-      "command": "node",
-      "args": ["/Users/kurogedelic/logic-pro-mcp/index.js"]
-    }
-  }
-}
