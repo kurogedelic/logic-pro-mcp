@@ -1,0 +1,28 @@
+{
+  "name": "logic-pro-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Logic Pro control via OSC",
+  "main": "index.js",
+  "type": "module",
+  "keywords": ["mcp", "logic-pro", "osc", "music", "daw"],
+  "author": "kurogedelic",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kurogedelic/logic-pro-mcp.git"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "node-osc": "^9.1.0",
+    "bonjour": "^3.5.0"
+  },
+  "bin": {
+    "logic-pro-mcp": "./index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
