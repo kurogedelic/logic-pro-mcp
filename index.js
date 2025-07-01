@@ -2,7 +2,7 @@
 import { createRequire } from 'module';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as osc from 'node-osc';
 
 // CommonJSモジュールのインポート
@@ -314,9 +314,7 @@ const tools = [
 ];
 
 // ツール登録
-server.setRequestHandler({
-  method: 'tools/list',
-}, async () => {
+server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: tools
   };
