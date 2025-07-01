@@ -3,7 +3,7 @@ import { createRequire } from 'module';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import osc from 'node-osc';
+import * as osc from 'node-osc';
 
 // CommonJSモジュールのインポート
 const require = createRequire(import.meta.url);
