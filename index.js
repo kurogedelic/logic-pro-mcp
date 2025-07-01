@@ -89,10 +89,11 @@ function handleConnect() {
     bonjourInstance = Bonjour();
     bonjourInstance.publish({
       name: 'MCP-Logic[iPad](TouchOSC)',
-      type: 'osc',
+      type: '_osc._udp',
       port: LOCAL_PORT,
       txt: { version: '1.0' }
     });
+    console.error(`Bonjour service published: MCP-Logic[iPad](TouchOSC) on port ${LOCAL_PORT}`);
 
     connected = true;
     
