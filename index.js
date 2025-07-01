@@ -167,12 +167,13 @@ function handleTransport({ action }) {
     throw new Error(`Unknown transport action: ${action}`);
   }
 
+  console.error(`Sending OSC: ${command} 1.0 to 127.0.0.1:${LOGIC_PORT}`);
   oscClient.send(command, 1.0);
   
   return {
     content: [{
       type: 'text',
-      text: `Transport: ${action}`
+      text: `Transport: ${action} (sent OSC: ${command})`
     }]
   };
 }
@@ -204,12 +205,13 @@ function handleMixer({ track, parameter, value }) {
     normalizedValue = Math.max(0, Math.min(1, value));
   }
     
+  console.error(`Sending OSC: ${path} ${normalizedValue} to 127.0.0.1:${LOGIC_PORT}`);
   oscClient.send(path, normalizedValue);
   
   return {
     content: [{
       type: 'text',
-      text: `Set track ${track} ${parameter} to ${normalizedValue}`
+      text: `Set track ${track} ${parameter} to ${normalizedValue} (sent OSC: ${path})`
     }]
   };
 }
@@ -220,12 +222,13 @@ function handleTrack({ number }) {
     throw new Error('Not connected to Logic Pro');
   }
 
+  console.error(`Sending OSC: /logic/track/select ${number} to 127.0.0.1:${LOGIC_PORT}`);
   oscClient.send('/logic/track/select', number);
   
   return {
     content: [{
       type: 'text',
-      text: `Selected track ${number}`
+      text: `Selected track ${number} (sent OSC: /logic/track/select)`
     }]
   };
 }
